@@ -1,6 +1,7 @@
 require 'sinatra'
 require 'pg'
 require 'cf-app-utils'
+require 'json'
 
 DATA ||= {}
 SUCCESS_MESSAGE = "SUCCESS"
@@ -58,10 +59,10 @@ end
 get '/services' do
   res = ENV['VCAP_SERVICES']
   if res
-    body = "SUCCESS\n#{res}"
+    body "SUCCESS\n#{res}"
     status 200
   else
-    body = "FAILURE"
+    body "FAILURE"
     status 409
   end
 end
@@ -75,15 +76,15 @@ post '/exec' do
     end
     res = conn.exec(params['sql'])
     if res.num_tuples > 0
+      #each entry in this array is another array representing a row. Each entry in that is a column of that row.
+      array_of_rows = Array.new(res.num_tuples)
       output = "#{SUCCESS_MESSAGE}\n"
+      i = 0
       res.each_row do |row|
-        row.map do |column|
-          #this technically won't play well if an entry actually has a quote in it...
-          output = "#{output}\"#{column}\" "
-        end
-        output = output.strip
-        output = "#{output}\n"
+        array_of_rows[i] = row
+        i = i + 1
       end
+      output = output << JSON.generate(array_of_rows)
       status 200
       body output
     else

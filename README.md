@@ -20,3 +20,5 @@ Note that double-quotes are used to delimit the -d argument of curl so that sing
 
 The response to this endpoint will be the expected SUCCESS/FAILURE message, and following that, starting on a new line, returned rows (if any) will be given the following format:
 Rows will each be represented on their own line. Columns within rows will be enclosed in double-quotes and separated by a space character from adjacent columns.
+
+Note that, due to limitations of the underlying pg api, if the input "query" is actually multiple queries concatenated with semicolons, while all of them will be executed, only the rows of the last query (if any) will be returned.

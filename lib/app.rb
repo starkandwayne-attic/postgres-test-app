@@ -3,6 +3,8 @@ require 'pg'
 require 'cf-app-utils'
 
 DATA ||= {}
+SUCCESS_MESSAGE = "SUCCESS"
+FAILURE_MESSAGE = "FAILURE"
 
 def postgres_uri
   return nil unless ENV['VCAP_SERVICES']
@@ -37,17 +39,17 @@ end
 get '/' do
   conn = get_conn
   if conn == nil
-    body "FAILURE"
+    body FAILURE_MESSAGE
     status 409
   else 
     begin
       res = conn.exec("SELECT CURRENT_TIMESTAMP;")
       status 200
-      output = "SUCCESS\n#{res.getvalue(0,0)}"
+      output = "#{SUCCESS_MESSAGE}\n#{res.getvalue(0,0)}"
       body output
     rescue PG::Error
       status 409
-      body "FAILURE"
+      body FAILURE_MESSAGE
     end
   end
   conn.close()
@@ -67,7 +69,7 @@ post '/exec' do
     end
     res = conn.exec(params['sql'])
     if res.num_tuples > 0
-      output = "SUCCESS\n"
+      output = "#{SUCCESS_MESSAGE}\n"
       res.each_row do |row|
         row.map do |column|
           #this technically won't play well if an entry actually has a quote in it...
@@ -76,13 +78,14 @@ post '/exec' do
         output = output.strip
         output = "#{output}\n"
       end
+      status 200
       body output
     else
-      body "SUCCESS"
+      body SUCCESS_MESSAGE
       status 200
     end
   rescue PG::Error
-    body "FAILED"
+    body FAILURE_MESSAGE
     status 409
   end
   conn.close()

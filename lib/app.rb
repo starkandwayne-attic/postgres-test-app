@@ -3,20 +3,6 @@ require 'pg'
 require 'cf-app-utils'
 
 DATA ||= {}
-TABLE_NAME = 'user_sample_table_1234567890'
-
-def create_sample_table
-  #bdr doesn't support IF NOT EXISTS... so, gotta hack around it.
-  sql = "SELECT 1 FROM pg_tables WHERE tablename = '#{TABLE_NAME}';"
-  res = $client.exec(sql)
-  if res.num_tuples > 0
-    sql = "DROP TABLE #{TABLE_NAME};"
-    $client.exec(sql)
-  end
-  sql = "CREATE TABLE #{TABLE_NAME}(key varchar(255), value varchar(255));"
-  $client.exec(sql)
-  nil
-end
 
 def postgres_uri
   return nil unless ENV['VCAP_SERVICES']
@@ -38,26 +24,33 @@ def postgres_uri
   nil
 end
 
-before do
-  unless postgres_uri
-    $default_message = 'FAILED: You must bind a Postgres service instance to this application'
+#gets a fresh connection to the database
+def get_conn
+  begin
+    return PG::Connection.new(postgres_uri)
+  rescue PG::Error
+    return nil
   end
-end
-
-begin
-  $client = PG::Connection.new(postgres_uri)
-  res = $client.exec("SELECT CURRENT_TIMESTAMP;")
-  timestamp = res.getvalue(0,0)
-  create_sample_table
-  $default_message = timestamp
-rescue PG::Error
-  $default_message = 'FAILED: Error during connection/initialization'
 end
 
 #This should display the timestamp if a connection to the database was established.
 get '/' do
-  body $default_message << '\n'
-  status 200
+  conn = get_conn
+  if conn == nil
+    body "FAILURE"
+    status 409
+  else 
+    begin
+      res = conn.exec("SELECT CURRENT_TIMESTAMP;")
+      status 200
+      output = "SUCCESS\n#{res.getvalue(0,0)}"
+      body output
+    rescue PG::Error
+      status 409
+      body "FAILURE"
+    end
+  end
+  conn.close()
 end
 
 get '/services' do
@@ -65,40 +58,34 @@ get '/services' do
   status 200
 end
 
-get '/insert/:key/:value' do
+#execute an arbitrary, user-supplied query on the database
+post '/exec' do
+  conn = get_conn
   begin
-    sql = "INSERT INTO #{TABLE_NAME} VALUES ('#{params['key']}', '#{params['value']}');"
-    $client.exec(sql)
-    status 200
-    body "Successfully inserted: key: '#{params['key']}', value: '#{params['value']}'"
-  rescue PG::Error
-    status 409
-    body "Unable to insert key: '#{params['key']}', value: '#{params['value']}'"
-  end
-end
-
-get '/query/:key' do
-  begin
-    if params['key'].to_s == '*'
-      sql = "SELECT * FROM #{TABLE_NAME};"
-    else
-      sql = "SELECT * FROM #{TABLE_NAME} WHERE key = '#{params['key']}';"
+    unless params['sql']
+      halt 500, 'NO-SQL-QUERY'
     end
-    res = $client.exec(sql)
-    if res.num_tuples == 0
-      body "No tuples were returned"
-    else
-      output = ""
+    res = conn.exec(params['sql'])
+    if res.num_tuples > 0
+      output = "SUCCESS\n"
       res.each_row do |row|
-        output = "#{output} key: '#{row[0]}', value: '#{row[1]}'\n"
+        row.map do |column|
+          #this technically won't play well if an entry actually has a quote in it...
+          output = "#{output}\"#{column}\" "
+        end
+        output = output.strip
+        output = "#{output}\n"
       end
-      status 200
       body output
+    else
+      body "SUCCESS"
+      status 200
     end
   rescue PG::Error
+    body "FAILED"
     status 409
-    body "FAILED: Error when returning tuples"
   end
+  conn.close()
 end
 
 error do

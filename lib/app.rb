@@ -76,15 +76,8 @@ post '/exec' do
     end
     res = conn.exec(params['sql'])
     if res.num_tuples > 0
-      #each entry in this array is another array representing a row. Each entry in that is a column of that row.
-      array_of_rows = Array.new(res.num_tuples)
       output = "#{SUCCESS_MESSAGE}\n"
-      i = 0
-      res.each_row do |row|
-        array_of_rows[i] = row
-        i = i + 1
-      end
-      output = output << JSON.generate(array_of_rows)
+      output = output << JSON.generate(res.values)
       status 200
       body output
     else

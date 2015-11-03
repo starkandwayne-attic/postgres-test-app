@@ -56,8 +56,14 @@ get '/' do
 end
 
 get '/services' do
-  body "#{ENV['VCAP_SERVICES']}\n"
-  status 200
+  res = ENV['VCAP_SERVICES']
+  if res
+    body = "SUCCESS\n#{res}"
+    status 200
+  else
+    body = "FAILURE"
+    status 409
+  end
 end
 
 #execute an arbitrary, user-supplied query on the database

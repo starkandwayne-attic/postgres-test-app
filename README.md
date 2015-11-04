@@ -4,7 +4,7 @@
 All calls respond with "SUCCESS" as their first line if the call performs the behavior as expected, and will return "FAILURE" as their first line otherwise.
 
 ###GET '/'  
-Displays the current timestamp if connecting to the database and creating a key-value table was successful. Otherwise, displays an error message beginning with "FAILED:"
+Displays the current timestamp if connecting to the database and creating a key-value table was successful.
 
 ###GET '/services'  
 Displays the VCAP\_SERVICES environment variable of the

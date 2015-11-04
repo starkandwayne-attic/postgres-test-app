@@ -67,7 +67,7 @@ end
 get '/uri' do
   res = postgres_uri
   if res
-    body SUCCESS_MESSAGE << "\n#{res}"
+    body "#{SUCCESS_MESSAGE}\n#{res}"
     status 200
   else
     body FAILURE_MESSAGE

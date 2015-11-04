@@ -37,7 +37,7 @@ def get_conn
 end
 
 #This should display the timestamp if a connection to the database was established.
-get '/' do
+get /\A\/(timestamp)?\z/ do
   conn = get_conn
   if conn == nil
     body FAILURE_MESSAGE
@@ -56,13 +56,19 @@ get '/' do
   conn.close()
 end
 
+#just an endpoint that should respond if this app is running.
+get '/ping' do
+  status 200
+  body SUCCESS_MESSAGE
+end
+
 get '/services' do
   res = ENV['VCAP_SERVICES']
   if res
-    body "SUCCESS\n#{res}"
+    body "#{SUCCESS_MESSAGE}\n#{res}"
     status 200
   else
-    body "FAILURE"
+    body FAILURE_MESSAGE
     status 409
   end
 end

@@ -37,6 +37,7 @@ def get_conn
 end
 
 #This should display the timestamp if a connection to the database was established.
+#The regex matches '/' or '/timestamp'
 get /\A\/(timestamp)?\z/ do
   conn = get_conn
   if conn == nil
@@ -61,6 +62,19 @@ get '/ping' do
   status 200
   body SUCCESS_MESSAGE
 end
+
+#displays the uri to access the postgres database
+get '/uri' do
+  res = postgres_uri
+  if res
+    body SUCCESS_MESSAGE << "\n#{res}"
+    status 200
+  else
+    body FAILURE_MESSAGE
+    status 409
+  end
+end
+
 
 get '/services' do
   res = ENV['VCAP_SERVICES']

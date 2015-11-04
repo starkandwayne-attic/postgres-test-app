@@ -19,6 +19,10 @@ application instance. It is considered to be a failure if the
 VCAP\_SERVICES environment variable does not exist in the
 application's environment.
 
+###GET '/uri'  
+Displays the connection uri for the Postgres database bound to the
+app.
+
 ###POST '/exec'  
 Takes, as the body, an parameter named "sql" which is equal to the SQL query to be executed on the app's database. An example format from `curl` is as follows:
 

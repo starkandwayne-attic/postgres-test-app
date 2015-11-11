@@ -12,13 +12,10 @@ def postgres_uri
 
   JSON.parse(ENV['VCAP_SERVICES'], :symbolize_names => true).values.map do |services|
     services.each do |s|
-      #check if this is actually an RDPG service. Ugly, but should work.
+      #check if this is actually a SQL service. Ugly, but should work.
       if s.has_key?(:credentials)
         c = s[:credentials]
-        if c.has_key?(:ID) and c.has_key?(:binding_id) and c.has_key?(:instance_id) and
-          c.has_key?(:uri) and c.has_key?(:dsn) and c.has_key?(:jdbc_uri) and
-          c.has_key?(:host) and c.has_key?(:port) and c.has_key?(:username) and
-          c.has_key?(:password) and c.has_key?(:database)
+        if c.has_key?(:uri) and c.has_key?(:jdbc_uri)
           return s[:credentials][:uri]
         end
       end

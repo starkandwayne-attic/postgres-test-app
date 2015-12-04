@@ -82,11 +82,15 @@ end
 
 #gets a fresh connection to the database
 def get_conn
-  begin
-    return PG::Connection.new(postgres_uri)
-  rescue PG::Error
-    return nil
-  end
+	for _ in 0...3 
+		begin
+			return PG::Connection.new(postgres_uri)
+		rescue PG::Error
+			sleep(0.25)
+			next
+		end
+	end
+  return nil
 end
 
 #This should display the timestamp if a connection to the database was established.
@@ -97,7 +101,7 @@ get /\A\/(timestamp(\/)?)?\z/ do
     body FAILURE_MESSAGE
     status 409
   else 
-    begin
+		begin
       res = conn.exec("SELECT CURRENT_TIMESTAMP;")
       status 200
       output = "#{SUCCESS_MESSAGE}\n#{res.getvalue(0,0)}"

@@ -15,7 +15,7 @@ def postgres_uri
       #check if this is actually a SQL service. Ugly, but should work.
       if s.has_key?(:credentials)
         c = s[:credentials]
-        if c.has_key?(:uri) and c.has_key?(:jdbc_uri)
+        if c.has_key?(:uri) and c[:uri].start_with?('postgresql://', 'postgres://')
           return s[:credentials][:uri]
         end
       end
@@ -37,9 +37,9 @@ def uri_entries
 	unless uri
 		return nil
 	end
-	if uri.index('postgresql://') == 0
+	if uri.start_with?('postgresql://')
 		uri = uri['postgresql://'.length...uri.length]
-	elsif uri.index('postgres://') == 0
+	elsif uri.start_with?('postgres://')
 		uri = uri['postgres://'.length...uri.length]
 	else
 		return nil #if it doesn't start with that string, the uri is invalid.
